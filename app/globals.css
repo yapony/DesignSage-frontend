@@ -1,0 +1,469 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+
+    /* 主色调为柔和的紫色 */
+    --primary: 270 70% 65%;
+    --primary-foreground: 0 0% 100%;
+
+    /* 次要颜色为浅紫色 */
+    --secondary: 270 100% 97%;
+    --secondary-foreground: 240 5.9% 10%;
+
+    /* 更新中性色调 */
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 270 100% 97%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 270 70% 65%;
+    --radius: 1rem;
+
+    /* 自定义颜色 */
+    --header-bg: 0 0% 100%;
+    --sidebar-bg: 0 0% 100%;
+    --main-bg: 0 0% 100%;
+
+    /* 模块颜色 - 更加明显的区分 */
+    --requirements-color-start: 270 70% 65%;
+    --requirements-color-end: 260 70% 60%;
+    --concept-color-start: 230 70% 65%;
+    --concept-color-end: 220 70% 60%;
+    --detailed-color-start: 300 70% 65%;
+    --detailed-color-end: 310 70% 60%;
+
+    /* 模块背景色 - 非常淡的背景 */
+    --requirements-bg: 270 30% 97%;
+    --concept-bg: 230 30% 97%;
+    --detailed-bg: 300 30% 97%;
+
+    /* 侧边栏背景色 */
+    --sidebar-requirements-bg: 270 70% 95%;
+    --sidebar-concept-bg: 230 70% 95%;
+    --sidebar-detailed-bg: 300 70% 95%;
+
+    /* 中间栏背景色 - 更淡 */
+    --feature-panel-requirements-bg: 270 30% 99%;
+    --feature-panel-concept-bg: 230 30% 99%;
+    --feature-panel-detailed-bg: 300 30% 99%;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 270 70% 65%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 270 30% 20%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 270 70% 65%;
+
+    --header-bg: 240 10% 3.9%;
+    --sidebar-bg: 240 10% 3.9%;
+    --main-bg: 240 10% 5.9%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* 更新头部样式 */
+.header {
+  background-color: hsl(var(--header-bg));
+  color: hsl(var(--foreground));
+  @apply shadow-sm;
+  position: relative;
+  z-index: 50;
+}
+
+/* 更新侧边栏样式 */
+.sidebar-container {
+  @apply p-4 h-full;
+}
+
+.sidebar {
+  position: relative;
+  z-index: 40;
+  @apply rounded-2xl shadow-sm h-full;
+}
+
+/* 侧边栏背景色 */
+.sidebar-requirements {
+  background-color: hsl(var(--sidebar-requirements-bg));
+}
+
+.sidebar-concept {
+  background-color: hsl(var(--sidebar-concept-bg));
+}
+
+.sidebar-detailed {
+  background-color: hsl(var(--sidebar-detailed-bg));
+}
+
+/* 中间栏背景色 */
+.feature-panel-requirements {
+  background-color: hsl(var(--feature-panel-requirements-bg));
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.feature-panel-concept {
+  background-color: hsl(var(--feature-panel-concept-bg));
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.feature-panel-detailed {
+  background-color: hsl(var(--feature-panel-detailed-bg));
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* 更新主内容区域样式 */
+.main-content {
+  background-color: white;
+  position: relative;
+}
+
+/* 更新卡片样式 */
+.chat-card {
+  @apply bg-white rounded-xl border border-border/5 shadow-sm hover:shadow-md transition-all duration-200;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 更新消息样式 */
+.chat-message-user {
+  @apply bg-secondary text-foreground border-none rounded-2xl rounded-tr-sm;
+  /* 移除背景色，保持透明 */
+  background: transparent;
+  position: relative;
+}
+
+.chat-message-ai {
+  @apply bg-white text-foreground border border-border/5 rounded-2xl rounded-tl-sm shadow-sm;
+  position: relative;
+}
+
+/* 更新按钮样式 */
+.function-button {
+  @apply transition-all duration-200 hover:shadow-sm rounded-full;
+}
+
+.function-button-active {
+  @apply bg-primary text-primary-foreground shadow-sm;
+}
+
+.function-button-inactive {
+  @apply bg-white border border-border/10 hover:border-primary/30;
+}
+
+/* 更新侧边栏项目样式 */
+.sidebar-item {
+  @apply transition-all duration-200 hover:bg-white/60 rounded-lg my-1 mx-2;
+}
+
+.sidebar-item-active {
+  @apply bg-white/70 border-l-2;
+}
+
+.sidebar-item-requirements {
+  border-color: hsl(var(--requirements-color-start));
+}
+
+.sidebar-item-concept {
+  border-color: hsl(var(--concept-color-start));
+}
+
+.sidebar-item-detailed {
+  border-color: hsl(var(--detailed-color-start));
+}
+
+/* 更新标签按钮样式 */
+.tab-button {
+  @apply rounded-full px-4 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring;
+}
+
+.tab-button-active {
+  @apply bg-white text-foreground shadow-sm;
+}
+
+.tab-button-inactive {
+  @apply text-muted-foreground hover:bg-white/80 hover:text-foreground;
+}
+
+/* 更新输入框样式 */
+.input-field {
+  @apply h-10 rounded-xl border border-border/10 bg-white px-4 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary;
+}
+
+/* 更新按钮样式 */
+.button-primary {
+  @apply bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 rounded-xl;
+}
+
+.button-secondary {
+  @apply bg-white text-foreground border border-border/10 shadow-sm hover:bg-secondary rounded-xl;
+}
+
+.button-ghost {
+  @apply hover:bg-secondary hover:text-foreground rounded-xl;
+}
+
+/* 卡片阴影 */
+.card-shadow {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+}
+
+/* 微妙边框 */
+.subtle-border {
+  @apply border border-border/5 rounded-xl;
+}
+
+/* 动画效果 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease forwards;
+}
+
+/* 模块颜色 */
+.requirements-color {
+  color: hsl(var(--requirements-color-start));
+}
+
+.concept-color {
+  color: hsl(var(--concept-color-start));
+}
+
+.detailed-color {
+  color: hsl(var(--detailed-color-start));
+}
+
+.requirements-bg {
+  background-color: hsl(var(--requirements-color-start));
+}
+
+.concept-bg {
+  background-color: hsl(var(--concept-color-start));
+}
+
+.detailed-bg {
+  background-color: hsl(var(--detailed-color-start));
+}
+
+.requirements-gradient {
+  background-image: linear-gradient(to right, hsl(var(--requirements-color-start)), hsl(var(--requirements-color-end)));
+}
+
+.concept-gradient {
+  background-image: linear-gradient(to right, hsl(var(--concept-color-start)), hsl(var(--concept-color-end)));
+}
+
+.detailed-gradient {
+  background-image: linear-gradient(to right, hsl(var(--detailed-color-start)), hsl(var(--detailed-color-end)));
+}
+
+/* 新增的样式 */
+.glass-card {
+  @apply bg-white/80 backdrop-blur-sm border border-white/20 shadow-sm;
+}
+
+.module-card {
+  @apply bg-white rounded-2xl shadow-sm border border-border/5 p-6 transition-all duration-300 hover:shadow-md;
+}
+
+.module-card:hover {
+  transform: translateY(-2px);
+}
+
+.new-chat-button {
+  @apply bg-white/80 font-medium rounded-lg py-2 px-4 flex items-center justify-center transition-all duration-200 hover:bg-white/90 shadow-sm;
+}
+
+.new-chat-button-requirements {
+  color: hsl(var(--requirements-color-start));
+}
+
+.new-chat-button-concept {
+  color: hsl(var(--concept-color-start));
+}
+
+.new-chat-button-detailed {
+  color: hsl(var(--detailed-color-start));
+}
+
+.action-button {
+  @apply rounded-full p-2 text-gray-500 hover:bg-secondary transition-colors duration-200;
+}
+
+.chat-input-container {
+  @apply bg-white rounded-xl border border-border/5 shadow-sm p-3 flex items-center gap-2;
+}
+
+.chat-input {
+  @apply flex-1 bg-transparent border-none outline-none text-sm;
+}
+
+/* 发送按钮样式 - 根据模块调整颜色 */
+.send-button-requirements {
+  @apply rounded-full p-2 hover:opacity-90 transition-colors duration-200 text-white;
+  background-color: hsl(var(--requirements-color-start));
+}
+
+.send-button-concept {
+  @apply rounded-full p-2 hover:opacity-90 transition-colors duration-200 text-white;
+  background-color: hsl(var(--concept-color-start));
+}
+
+.send-button-detailed {
+  @apply rounded-full p-2 hover:opacity-90 transition-colors duration-200 text-white;
+  background-color: hsl(var(--detailed-color-start));
+}
+
+.function-tag {
+  @apply rounded-full text-xs py-1 px-3 bg-secondary text-primary font-medium;
+}
+
+/* 功能标签样式 - 根据模块调整颜色 */
+.function-tag-requirements {
+  background-color: hsl(var(--requirements-color-start) / 10%);
+  color: hsl(var(--requirements-color-start));
+}
+
+.function-tag-concept {
+  background-color: hsl(var(--concept-color-start) / 10%);
+  color: hsl(var(--concept-color-start));
+}
+
+.function-tag-detailed {
+  background-color: hsl(var(--detailed-color-start) / 10%);
+  color: hsl(var(--detailed-color-start));
+}
+
+/* Material UI 风格的卡片 */
+.material-card {
+  @apply bg-white rounded-xl shadow-sm border-none transition-all duration-300 overflow-hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+.material-card:hover {
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+  transform: translateY(-2px);
+}
+
+.material-card-title {
+  @apply text-xl font-medium mb-2;
+}
+
+.material-card-description {
+  @apply text-sm text-gray-600;
+}
+
+/* 聊天区域样式 */
+.chat-area {
+  @apply p-6;
+}
+
+/* 侧边栏标题 */
+.sidebar-title {
+  @apply font-medium text-lg;
+}
+
+.sidebar-title-requirements {
+  color: hsl(var(--requirements-color-start));
+}
+
+.sidebar-title-concept {
+  color: hsl(var(--concept-color-start));
+}
+
+.sidebar-title-detailed {
+  color: hsl(var(--detailed-color-start));
+}
+
+/* 返回按钮 */
+.back-button {
+  @apply text-gray-500 hover:text-gray-700 transition-colors bg-white/80 hover:bg-white/90;
+}
+
+/* 模块图标容器 */
+.module-icon {
+  @apply w-8 h-8 rounded-lg flex items-center justify-center;
+}
+
+.module-icon-requirements {
+  background-image: linear-gradient(135deg, hsl(var(--requirements-color-start)), hsl(var(--requirements-color-end)));
+}
+
+.module-icon-concept {
+  background-image: linear-gradient(135deg, hsl(var(--concept-color-start)), hsl(var(--concept-color-end)));
+}
+
+.module-icon-detailed {
+  background-image: linear-gradient(135deg, hsl(var(--detailed-color-start)), hsl(var(--detailed-color-end)));
+}
+
+/* 功能按钮样式 */
+.function-button-requirements {
+  @apply hover:bg-white/60;
+}
+
+.function-button-requirements.active {
+  @apply bg-white/70 border-l-2;
+  border-color: hsl(var(--requirements-color-start));
+}
+
+.function-button-concept {
+  @apply hover:bg-white/60;
+}
+
+.function-button-concept.active {
+  @apply bg-white/70 border-l-2;
+  border-color: hsl(var(--concept-color-start));
+}
+
+.function-button-detailed {
+  @apply hover:bg-white/60;
+}
+
+.function-button-detailed.active {
+  @apply bg-white/70 border-l-2;
+  border-color: hsl(var(--detailed-color-start));
+}
