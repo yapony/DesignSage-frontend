@@ -13,6 +13,7 @@ import { ChatInput } from "@/components/chat-input"
 import { FunctionButton } from "@/components/function-button"
 import { FeaturePanel } from "@/components/feature-panel"
 import { getConversations, getConversationMessages, createChatMessage, renameConversation, generateConversationName } from '@/lib/api/dify'
+import { getFunctionTypeFromInputs } from '@/lib/utils/function'
 import { Message } from '@/types/chat'
 import { FunctionType } from '@/types/function'
 
@@ -24,7 +25,7 @@ export default function RequirementsAnalysis() {
   const [hasStartedChat, setHasStartedChat] = useState(false)
   const [activeChatId, setActiveChatId] = useState<string | null>(null)
   const [showSidebar, setShowSidebar] = useState(true)
-  const [activeFunction, setActiveFunction] = useState<FunctionType>("user-research")
+  const [activeFunction, setActiveFunction] = useState<FunctionType>("static_demand_analysis")
   const [showFeaturePanel, setShowFeaturePanel] = useState(true)
   const [reportContent, setReportContent] = useState<string | null>(null)
   const [input, setInput] = useState("")
@@ -32,18 +33,21 @@ export default function RequirementsAnalysis() {
   const [chatHistories, setChatHistories] = useState<any[]>([])
   const [isResponding, setIsResponding] = useState(false)
   const [conversationIdChangeBecauseOfNew, setConversationIdChangeBecauseOfNew] = useState(false)
-  const [inputs, setInputs] = useState({
+  const [inputs, setInputs] = useState<{
+    Mode: string
+    internet_needed: number
+    Report_needed: number
+  }>({
     Mode: 'UXResearch',
     internet_needed: 0,
     Report_needed: 0,
-    ImageGeneration: 0,
   })
 
   // 功能类型中文映射
   const functionTypeMap: Record<string, string> = {
-    'user-research': '静态需求分析',
-    'dynamic-query': '动态需求洞察',
-    'report-generation': '需求分析报告生成',
+    'static_demand_analysis': '静态需求分析',
+    'web_search_query': '动态需求洞察',
+    'report_generation': '需求分析报告生成',
   }
 
   // richContent for 静态需求分析
@@ -167,14 +171,14 @@ export default function RequirementsAnalysis() {
     setInputs(useInputs);
   };
 
-  const handleSendMessage = async (content: string) => {
-    if (!content.trim() || isResponding) return;
+  const handleSendMessage = async (message: string) => {
+    if (!message.trim() || isResponding) return;
     if (messages.length === 1 && messages[0].role === 'assistant') {
       await startNewChat();
     }
     const userMessage: Message = {
       id: `user-${Date.now()}`,
-      content,
+      content: message,
       role: 'user',
       timestamp: new Date(),
       functionType: activeFunction
@@ -184,22 +188,16 @@ export default function RequirementsAnalysis() {
     setIsLoading(true);
     setIsResponding(true);
     let sendInputs = { ...inputs };
-    if (activeFunction === 'dynamic-query') {
+    if (activeFunction === 'web_search_query') {
       sendInputs.internet_needed = 1;
       sendInputs.Report_needed = 0;
-      sendInputs.ImageGeneration = 0;
-    } else if (activeFunction === 'report-generation') {
+    } else if (activeFunction === 'report_generation') {
       sendInputs.internet_needed = 0;
       sendInputs.Report_needed = 1;
-      sendInputs.ImageGeneration = 0;
-    } else {
-      sendInputs.internet_needed = 0;
-      sendInputs.Report_needed = 0;
-      sendInputs.ImageGeneration = 0;
     }
     sendInputs.Mode = 'UXResearch';
     try {
-      const response = await createChatMessage(content, 'requirements', activeFunction, activeChatId === '-1' ? null : activeChatId, undefined, sendInputs);
+      const response = await createChatMessage(message, 'requirements', activeFunction, activeChatId === '-1' ? null : activeChatId, undefined, sendInputs);
       let gotConversationId = false;
       const reader = response.body?.getReader();
       if (!reader) throw new Error('无法获取响应流');
@@ -232,7 +230,8 @@ export default function RequirementsAnalysis() {
                     content: data.answer,
                     role: 'assistant',
                     timestamp: data.timestamp ? new Date(data.timestamp) : new Date(),
-                    functionType: activeFunction
+                    functionType: activeFunction,
+                    moduleId: 'requirements'
                   });
                 } else {
                   updated[updated.length - 1] = { ...last, content: last.content + data.answer };
@@ -269,9 +268,9 @@ export default function RequirementsAnalysis() {
   const handleFunctionChange = (functionType: FunctionType) => {
     setActiveFunction(functionType)
     setShowFeaturePanel(true)
-    let newInputs = { Mode: 'UXResearch', internet_needed: 0, Report_needed: 0, ImageGeneration: 0 }
-    if (functionType === 'dynamic-query') newInputs.internet_needed = 1
-    if (functionType === 'report-generation') newInputs.Report_needed = 1
+    let newInputs = { Mode: 'UXResearch', internet_needed: 0, Report_needed: 0 }
+    if (functionType === 'web_search_query') newInputs.internet_needed = 1
+    if (functionType === 'report_generation') newInputs.Report_needed = 1
     setInputs(newInputs)
     // 新增：如果只有欢迎消息，刷新它
     if (messages.length === 1 && messages[0].role === 'assistant') {
@@ -306,7 +305,13 @@ export default function RequirementsAnalysis() {
     }
     setActiveChatId(chatId)
     setConversationIdChangeBecauseOfNew(false)
-    setActiveFunction('user-research')
+    setActiveFunction('static_demand_analysis')
+    setShowFeaturePanel(true)
+    setInputs({
+      Mode: 'UXResearch',
+      internet_needed: 0,
+      Report_needed: 0
+    })
     try {
       const { data } = await getConversationMessages(chatId)
       const chatMessages: Message[] = []
@@ -317,7 +322,7 @@ export default function RequirementsAnalysis() {
             content: item.query,
             role: 'user',
             timestamp: item.created_at,
-            functionType: item.functionType || 'user-research'
+            functionType: getFunctionTypeFromInputs(item.inputs || {})
           })
         }
         if (item.answer) {
@@ -326,7 +331,7 @@ export default function RequirementsAnalysis() {
             content: item.answer,
             role: 'assistant',
             timestamp: item.created_at,
-            functionType: item.functionType || 'user-research'
+            functionType: getFunctionTypeFromInputs(item.inputs || {})
           })
         }
       })
@@ -365,21 +370,21 @@ export default function RequirementsAnalysis() {
           <div className="p-4 space-y-2">
             <FunctionButton
               label="静态需求分析"
-              isActive={activeFunction === "user-research"}
+              isActive={activeFunction === "static_demand_analysis"}
               moduleId="requirements"
-              onClick={() => handleFunctionChange("user-research")}
+              onClick={() => handleFunctionChange("static_demand_analysis")}
             />
             <FunctionButton
               label="动态需求洞察"
-              isActive={activeFunction === "dynamic-query"}
+              isActive={activeFunction === "web_search_query"}
               moduleId="requirements"
-              onClick={() => handleFunctionChange("dynamic-query")}
+              onClick={() => handleFunctionChange("web_search_query")}
             />
             <FunctionButton
               label="需求分析报告生成"
-              isActive={activeFunction === "report-generation"}
+              isActive={activeFunction === "report_generation"}
               moduleId="requirements"
-              onClick={() => handleFunctionChange("report-generation")}
+              onClick={() => handleFunctionChange("report_generation")}
             />
           </div>
 
@@ -429,7 +434,7 @@ export default function RequirementsAnalysis() {
         onToggle={toggleFeaturePanel}
         reportContent={reportContent || undefined}
         moduleId="requirements"
-        richContent={activeFunction === 'user-research' ? userResearchRichContent : activeFunction === 'dynamic-query' ? dynamicQueryRichContent : activeFunction === 'report-generation' ? reportGenerationRichContent : undefined}
+        richContent={activeFunction === 'static_demand_analysis' ? userResearchRichContent : activeFunction === 'web_search_query' ? dynamicQueryRichContent : activeFunction === 'report_generation' ? reportGenerationRichContent : undefined}
       />
 
       {/* Main Chat Area */}
@@ -472,7 +477,7 @@ export default function RequirementsAnalysis() {
         </div>
 
         {/* 底部输入区域：仅在 report-generation 功能下显示按钮，其它功能显示输入框 */}
-        {activeFunction === "report-generation" ? (
+        {activeFunction === "report_generation" ? (
           <div className="p-6 bg-white">
             <button
               className="w-full h-12 bg-primary text-white rounded-xl text-lg font-semibold transition disabled:opacity-60"

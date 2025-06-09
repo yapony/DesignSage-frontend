@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { User, Menu, ChevronRight, Lightbulb } from "lucide-react"
+import { User, Menu, ChevronRight, Lightbulb, Search, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar } from "@/components/ui/avatar"
 import { useMobile } from "@/hooks/use-mobile"
@@ -13,6 +13,7 @@ import { ChatInput } from "@/components/chat-input"
 import { FunctionButton } from "@/components/function-button"
 import { FeaturePanel } from "@/components/feature-panel"
 import { getConversations, getConversationMessages, createChatMessage, renameConversation, generateConversationName } from '@/lib/api/dify'
+import { getFunctionTypeFromInputs } from '@/lib/utils/function'
 import { Message } from '@/types/chat'
 import { FunctionType } from '@/types/function'
 
@@ -24,7 +25,7 @@ export default function Conceptual_design() {
   const [hasStartedChat, setHasStartedChat] = useState(false)
   const [activeChatId, setActiveChatId] = useState<string | null>(null)
   const [showSidebar, setShowSidebar] = useState(true)
-  const [activeFunction, setActiveFunction] = useState<FunctionType>("design-trend")
+  const [activeFunction, setActiveFunction] = useState<FunctionType>("concep_design_knowledge")
   const [showFeaturePanel, setShowFeaturePanel] = useState(true)
   const [reportContent, setReportContent] = useState<string | null>(null)
   const [input, setInput] = useState("")
@@ -32,14 +33,21 @@ export default function Conceptual_design() {
   const [chatHistories, setChatHistories] = useState<any[]>([])
   const [isResponding, setIsResponding] = useState(false)
   const [conversationIdChangeBecauseOfNew, setConversationIdChangeBecauseOfNew] = useState(false)
-  const [inputs, setInputs] = useState({ Mode: 'Conceptual_design', internet_needed: 0, Report_needed: 0, ImageGeneration: 0 })
+  const [inputs, setInputs] = useState<{
+    Mode: string
+    internet_needed: number
+    Report_needed: number
+  }>({
+    Mode: 'Conceptual_design',
+    internet_needed: 0,
+    Report_needed: 0,
+  })
 
   // 功能类型中文映射
   const functionTypeMap: Record<string, string> = {
-    'design-trend': '设计知识问答',
-    'dynamic-query': '设计视野拓展',
-    'image-generation': '概念图像生成',
-    'report-generation': '概念设计报告生成',
+    'concep_design_knowledge': '设计规范问答',
+    'web_search_query': '实现方案探索',
+    'report_generation': '详细设计方案生成',
   }
 
   // richContent for 设计趋势分析
@@ -176,14 +184,14 @@ export default function Conceptual_design() {
     setInputs(useInputs);
   };
 
-  const handleSendMessage = async (content: string) => {
-    if (!content.trim() || isResponding) return;
+  const handleSendMessage = async (message: string) => {
+    if (!message.trim() || isResponding) return;
     if (messages.length === 1 && messages[0].role === 'assistant') {
       await startNewChat();
     }
     const userMessage: Message = {
       id: `user-${Date.now()}`,
-      content,
+      content: message,
       role: 'user',
       timestamp: new Date(),
       functionType: activeFunction
@@ -193,26 +201,19 @@ export default function Conceptual_design() {
     setIsLoading(true);
     setIsResponding(true);
     let sendInputs = { ...inputs };
-    if (activeFunction === 'dynamic-query') {
+    if (activeFunction === 'web_search_query') {
       sendInputs.internet_needed = 1;
       sendInputs.Report_needed = 0;
-      sendInputs.ImageGeneration = 0;
-    } else if (activeFunction === 'report-generation') {
+    } else if (activeFunction === 'report_generation') {
       sendInputs.internet_needed = 0;
       sendInputs.Report_needed = 1;
-      sendInputs.ImageGeneration = 0;
-    } else if (activeFunction === 'image-generation') {
-      sendInputs.internet_needed = 0;
-      sendInputs.Report_needed = 0;
-      sendInputs.ImageGeneration = 1;
     } else {
       sendInputs.internet_needed = 0;
       sendInputs.Report_needed = 0;
-      sendInputs.ImageGeneration = 0;
     }
     sendInputs.Mode = 'Conceptual_design';
     try {
-      const response = await createChatMessage(content, 'concept', activeFunction, activeChatId === '-1' ? null : activeChatId, undefined, sendInputs);
+      const response = await createChatMessage(message, 'concept', activeFunction, activeChatId === '-1' ? null : activeChatId, undefined, sendInputs);
       let gotConversationId = false;
       const reader = response.body?.getReader();
       if (!reader) throw new Error('无法获取响应流');
@@ -252,7 +253,8 @@ export default function Conceptual_design() {
                     content: data.answer,
                     role: 'assistant',
                     timestamp: data.timestamp ? new Date(data.timestamp) : new Date(),
-                    functionType: activeFunction
+                    functionType: activeFunction,
+                    moduleId: 'concept'
                   });
                 } else {
                   updated[updated.length - 1] = { ...last, content: last.content + data.answer };
@@ -285,7 +287,13 @@ export default function Conceptual_design() {
     }
     setActiveChatId(chatId)
     setConversationIdChangeBecauseOfNew(false)
-    setActiveFunction('design-trend')
+    setActiveFunction('concep_design_knowledge')
+    setShowFeaturePanel(true)
+    setInputs({
+      Mode: 'Conceptual_design',
+      internet_needed: 0,
+      Report_needed: 0
+    })
     try {
       const { data } = await getConversationMessages(chatId)
       const chatMessages: Message[] = []
@@ -296,7 +304,7 @@ export default function Conceptual_design() {
             content: item.query,
             role: 'user',
             timestamp: item.created_at,
-            functionType: item.functionType || 'design-trend'
+            functionType: getFunctionTypeFromInputs(item.inputs || {})
           })
         }
         if (item.answer) {
@@ -305,7 +313,7 @@ export default function Conceptual_design() {
             content: item.answer,
             role: 'assistant',
             timestamp: item.created_at,
-            functionType: item.functionType || 'design-trend'
+            functionType: getFunctionTypeFromInputs(item.inputs || {})
           })
         }
       })
@@ -333,22 +341,10 @@ export default function Conceptual_design() {
   const handleFunctionChange = (functionType: FunctionType) => {
     setActiveFunction(functionType)
     setShowFeaturePanel(true)
-    let newInputs = { Mode: 'Conceptual_design', internet_needed: 0, Report_needed: 0, ImageGeneration: 0 }
-    if (functionType === 'dynamic-query') newInputs.internet_needed = 1
-    if (functionType === 'report-generation') newInputs.Report_needed = 1
-    if (functionType === 'image-generation') newInputs.ImageGeneration = 1
+    let newInputs = { Mode: 'Conceptual_design', internet_needed: 0, Report_needed: 0 }
+    if (functionType === 'web_search_query') newInputs.internet_needed = 1
+    if (functionType === 'report_generation') newInputs.Report_needed = 1
     setInputs(newInputs)
-    // 新增：如果只有欢迎消息，刷新它
-    if (messages.length === 1 && messages[0].role === 'assistant') {
-      const welcomeMessage: Message = {
-        id: `welcome-${Date.now()}`,
-        content: `欢迎使用概念设计助手！`,
-        role: 'assistant',
-        timestamp: new Date(),
-        functionType: functionType
-      }
-      setMessages([welcomeMessage])
-    }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -371,6 +367,27 @@ export default function Conceptual_design() {
     }
   }, [activeChatId, hasStartedChat])
 
+  const functionButtons = [
+    {
+      id: 'concep_design_knowledge',
+      label: '设计规范问答',
+      description: '回答设计相关的基础知识问题',
+      icon: <Lightbulb className="h-4 w-4" />,
+    },
+    {
+      id: 'web_search_query',
+      label: '实现方案探索',
+      description: '搜索并分析最新的设计趋势和案例',
+      icon: <Search className="h-4 w-4" />,
+    },
+    {
+      id: 'report_generation',
+      label: '详细设计方案生成',
+      description: '生成完整的概念设计方案',
+      icon: <FileText className="h-4 w-4" />,
+    },
+  ]
+
   return (
     <div className="flex h-screen bg-white">
       {/* Left Sidebar */}
@@ -384,24 +401,15 @@ export default function Conceptual_design() {
           </div>
 
           <div className="p-4 space-y-2">
-            <FunctionButton
-              label="设计知识问答"
-              isActive={activeFunction === "design-trend"}
-              moduleId="concept"
-              onClick={() => handleFunctionChange("design-trend")}
-            />
-            <FunctionButton
-              label="设计视野拓展"
-              isActive={activeFunction === "dynamic-query"}
-              moduleId="concept"
-              onClick={() => handleFunctionChange("dynamic-query")}
-            />
-            <FunctionButton
-              label="概念设计报告生成"
-              isActive={activeFunction === "report-generation"}
-              moduleId="concept"
-              onClick={() => handleFunctionChange("report-generation")}
-            />
+            {functionButtons.map((button) => (
+              <FunctionButton
+                key={button.id}
+                label={button.label}
+                isActive={activeFunction === button.id}
+                moduleId="concept"
+                onClick={() => handleFunctionChange(button.id as FunctionType)}
+              />
+            ))}
           </div>
 
           <div className="border-t border-border/10 mt-2 pt-2 px-4">
@@ -450,7 +458,7 @@ export default function Conceptual_design() {
         onToggle={toggleFeaturePanel}
         reportContent={reportContent || undefined}
         moduleId="concept"
-        richContent={activeFunction === 'design-trend' ? designTrendRichContent : activeFunction === 'dynamic-query' ? designVisionRichContent : activeFunction === 'image-generation' ? imageGenerationRichContent : activeFunction === 'report-generation' ? reportGenerationRichContent : undefined}
+        richContent={activeFunction === 'concep_design_knowledge' ? designTrendRichContent : activeFunction === 'web_search_query' ? designVisionRichContent : activeFunction === 'report_generation' ? reportGenerationRichContent : undefined}
       />
 
       {/* Main Chat Area */}
@@ -493,7 +501,7 @@ export default function Conceptual_design() {
         </div>
 
         {/* 底部输入区域：仅在 report-generation 功能下显示按钮，其它功能显示输入框 */}
-        {activeFunction === "report-generation" ? (
+        {activeFunction === "report_generation" ? (
           <div className="p-6 bg-white">
             <button
               className="w-full h-12 bg-primary text-white rounded-xl text-lg font-semibold transition disabled:opacity-60"
@@ -508,7 +516,7 @@ export default function Conceptual_design() {
           <ChatInput
             onSendMessage={handleSendMessage}
             activeFunction={functionTypeMap[activeFunction] || ''}
-            isReportGeneration={activeFunction === "report-generation"}
+            isReportGeneration={activeFunction === "report_generation"}
             moduleId="concept"
             isDisabled={isLoading}
             isResponding={isResponding}

@@ -67,17 +67,6 @@ export function ChatMessage({ message, moduleId, isLoading }: ChatMessageProps) 
     alert("将重新生成回复")
   }
 
-  const getFunctionLabel = (type: string | undefined) => {
-    if (!type) return null
-
-    const functionLabels: Record<string, string> = {
-      "web-search": "联网搜索",
-      "image-generation": "图像生成",
-    }
-
-    return functionLabels[type] || type
-  }
-
   // 1. 兼容结构化 files/message_files
   let files = (message.files && message.files.length > 0)
     ? message.files
@@ -133,7 +122,7 @@ export function ChatMessage({ message, moduleId, isLoading }: ChatMessageProps) 
         <div className="flex flex-col items-start gap-1 max-w-[80%]">
           {message.functionType && (
             <Badge variant="outline" className="function-tag mb-1">
-              {getFunctionLabel(message.functionType)}
+              {message.functionType}
             </Badge>
           )}
           <div className="flex items-start gap-2">
@@ -160,8 +149,11 @@ export function ChatMessage({ message, moduleId, isLoading }: ChatMessageProps) 
         message.role === "user" ? "items-end" : ""
       )}>
         {message.role === "assistant" && message.functionType && (
-          <Badge variant="outline" className="function-tag mb-1">
-            {getFunctionLabel(message.functionType)}
+          <Badge 
+            variant="outline" 
+            className={cn("function-tag mb-1", message.moduleId ? `function-tag-${message.moduleId}` : '')}
+          >
+            {message.functionType}
           </Badge>
         )}
         <div className={cn(

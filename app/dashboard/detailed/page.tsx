@@ -13,8 +13,10 @@ import { ChatInput } from "@/components/chat-input"
 import { FunctionButton } from "@/components/function-button"
 import { FeaturePanel } from "@/components/feature-panel"
 import { getConversations, getConversationMessages, createChatMessage, renameConversation, generateConversationName } from '@/lib/api/dify'
+import { getFunctionTypeFromInputs } from '@/lib/utils/function'
 import { Message } from '@/types/chat'
 import { FunctionType } from '@/types/function'
+import { toast } from "@/components/ui/use-toast"
 
 export default function Detailed_design() {
   const router = useRouter()
@@ -24,7 +26,7 @@ export default function Detailed_design() {
   const [hasStartedChat, setHasStartedChat] = useState(false)
   const [activeChatId, setActiveChatId] = useState<string | null>(null)
   const [showSidebar, setShowSidebar] = useState(true)
-  const [activeFunction, setActiveFunction] = useState<FunctionType>("design-trend")
+  const [activeFunction, setActiveFunction] = useState<FunctionType>("detailed_design_knowledge")
   const [showFeaturePanel, setShowFeaturePanel] = useState(true)
   const [reportContent, setReportContent] = useState<string | null>(null)
   const [input, setInput] = useState("")
@@ -32,13 +34,21 @@ export default function Detailed_design() {
   const [chatHistories, setChatHistories] = useState<any[]>([])
   const [isResponding, setIsResponding] = useState(false)
   const [conversationIdChangeBecauseOfNew, setConversationIdChangeBecauseOfNew] = useState(false)
-  const [inputs, setInputs] = useState({ Mode: 'Detailed_design', internet_needed: 0, Report_needed: 0, ImageGeneration: 0 })
+  const [inputs, setInputs] = useState<{
+    Mode: string
+    internet_needed: number
+    Report_needed: number
+  }>({
+    Mode: 'Detailed_design',
+    internet_needed: 0,
+    Report_needed: 0,
+  })
 
   // 功能类型中文映射
   const functionTypeMap: Record<string, string> = {
-    'design-trend': '设计规范问答',
-    'dynamic-query': '实现方案探索',
-    'report-generation': '详细设计方案生成',
+    'detailed_design_knowledge': '设计规范问答',
+    'web_search_query': '实现方案探索',
+    'report_generation': '详细设计方案生成',
   }
 
   // richContent for 设计规范问答
@@ -155,14 +165,14 @@ export default function Detailed_design() {
     setInputs(useInputs);
   };
 
-  const handleSendMessage = async (content: string) => {
-    if (!content.trim() || isResponding) return;
+  const handleSendMessage = async (message: string) => {
+    if (!message.trim() || isResponding) return;
     if (messages.length === 1 && messages[0].role === 'assistant') {
       await startNewChat();
     }
     const userMessage: Message = {
       id: `user-${Date.now()}`,
-      content,
+      content: message,
       role: 'user',
       timestamp: new Date(),
       functionType: activeFunction
@@ -172,26 +182,19 @@ export default function Detailed_design() {
     setIsLoading(true);
     setIsResponding(true);
     let sendInputs = { ...inputs };
-    if (activeFunction === 'dynamic-query') {
+    if (activeFunction === 'web_search_query') {
       sendInputs.internet_needed = 1;
       sendInputs.Report_needed = 0;
-      sendInputs.ImageGeneration = 0;
-    } else if (activeFunction === 'report-generation') {
+    } else if (activeFunction === 'report_generation') {
       sendInputs.internet_needed = 0;
       sendInputs.Report_needed = 1;
-      sendInputs.ImageGeneration = 0;
-    } else if (activeFunction === 'image-generation') {
-      sendInputs.internet_needed = 0;
-      sendInputs.Report_needed = 0;
-      sendInputs.ImageGeneration = 1;
     } else {
       sendInputs.internet_needed = 0;
       sendInputs.Report_needed = 0;
-      sendInputs.ImageGeneration = 0;
     }
     sendInputs.Mode = 'Detailed_design';
     try {
-      const response = await createChatMessage(content, 'detailed', activeFunction, activeChatId === '-1' ? null : activeChatId, undefined, sendInputs);
+      const response = await createChatMessage(message, 'detailed', activeFunction, activeChatId === '-1' ? null : activeChatId, undefined, sendInputs);
       let gotConversationId = false;
       const reader = response.body?.getReader();
       if (!reader) throw new Error('无法获取响应流');
@@ -231,7 +234,8 @@ export default function Detailed_design() {
                     content: data.answer,
                     role: 'assistant',
                     timestamp: data.timestamp ? new Date(data.timestamp) : new Date(),
-                    functionType: activeFunction
+                    functionType: activeFunction,
+                    moduleId: 'detailed'
                   });
                 } else {
                   updated[updated.length - 1] = { ...last, content: last.content + data.answer };
@@ -290,9 +294,9 @@ export default function Detailed_design() {
   const handleFunctionChange = (functionType: FunctionType) => {
     setActiveFunction(functionType)
     setShowFeaturePanel(true)
-    let newInputs = { Mode: 'Detailed_design', internet_needed: 0, Report_needed: 0, ImageGeneration: 0 }
-    if (functionType === 'dynamic-query') newInputs.internet_needed = 1
-    if (functionType === 'report-generation') newInputs.Report_needed = 1
+    let newInputs = { Mode: 'Detailed_design', internet_needed: 0, Report_needed: 0 }
+    if (functionType === 'web_search_query') newInputs.internet_needed = 1
+    if (functionType === 'report_generation') newInputs.Report_needed = 1
     setInputs(newInputs)
     if (messages.length === 1 && messages[0].role === 'assistant') {
       const welcomeMessage: Message = {
@@ -326,7 +330,13 @@ export default function Detailed_design() {
     }
     setActiveChatId(chatId)
     setConversationIdChangeBecauseOfNew(false)
-    setActiveFunction('design-trend')
+    setActiveFunction('detailed_design_knowledge')
+    setShowFeaturePanel(true)
+    setInputs({
+      Mode: 'Detailed_design',
+      internet_needed: 0,
+      Report_needed: 0
+    })
     try {
       const { data } = await getConversationMessages(chatId)
       const chatMessages: Message[] = []
@@ -337,7 +347,7 @@ export default function Detailed_design() {
             content: item.query,
             role: 'user',
             timestamp: item.created_at,
-            functionType: item.functionType || 'design-trend'
+            functionType: getFunctionTypeFromInputs(item.inputs || {})
           })
         }
         if (item.answer) {
@@ -346,20 +356,18 @@ export default function Detailed_design() {
             content: item.answer,
             role: 'assistant',
             timestamp: item.created_at,
-            functionType: item.functionType || 'design-trend'
+            functionType: getFunctionTypeFromInputs(item.inputs || {})
           })
         }
       })
       setMessages(chatMessages)
     } catch (error) {
-      console.error('加载对话消息失败:', error)
-      const errorMessage: Message = {
-        id: Date.now().toString(),
-        content: "加载对话消息失败，请重试",
-        role: "assistant",
-        timestamp: new Date(),
-      }
-      setMessages((prev) => [...prev, errorMessage])
+      console.error('Failed to load chat messages:', error)
+      toast({
+        title: '加载失败',
+        description: '无法加载对话消息，请稍后重试',
+        variant: 'destructive',
+      })
     }
   }
 
@@ -385,21 +393,21 @@ export default function Detailed_design() {
           <div className="p-4 space-y-2">
             <FunctionButton
               label="设计规范问答"
-              isActive={activeFunction === "design-trend"}
+              isActive={activeFunction === "detailed_design_knowledge"}
               moduleId="detailed"
-              onClick={() => handleFunctionChange("design-trend")}
+              onClick={() => handleFunctionChange("detailed_design_knowledge")}
             />
             <FunctionButton
               label="实现方案探索"
-              isActive={activeFunction === "dynamic-query"}
+              isActive={activeFunction === "web_search_query"}
               moduleId="detailed"
-              onClick={() => handleFunctionChange("dynamic-query")}
+              onClick={() => handleFunctionChange("web_search_query")}
             />
             <FunctionButton
-              label="详细设计报告生成"
-              isActive={activeFunction === "report-generation"}
+              label="详细设计方案生成"
+              isActive={activeFunction === "report_generation"}
               moduleId="detailed"
-              onClick={() => handleFunctionChange("report-generation")}
+              onClick={() => handleFunctionChange("report_generation")}
             />
           </div>
 
@@ -449,7 +457,7 @@ export default function Detailed_design() {
         onToggle={toggleFeaturePanel}
         reportContent={reportContent || undefined}
         moduleId="detailed"
-        richContent={activeFunction === 'design-trend' ? designStandardRichContent : activeFunction === 'dynamic-query' ? dynamicQueryRichContent : activeFunction === 'report-generation' ? reportGenerationRichContent : undefined}
+        richContent={activeFunction === 'detailed_design_knowledge' ? designStandardRichContent : activeFunction === 'web_search_query' ? dynamicQueryRichContent : activeFunction === 'report_generation' ? reportGenerationRichContent : undefined}
       />
 
       {/* Main Chat Area */}
@@ -492,7 +500,7 @@ export default function Detailed_design() {
         </div>
 
         {/* 底部输入区域：仅在 report-generation 功能下显示按钮，其它功能显示输入框 */}
-        {activeFunction === "report-generation" ? (
+        {activeFunction === "report_generation" ? (
           <div className="p-6 bg-white">
             <button
               className="w-full h-12 bg-primary text-white rounded-xl text-lg font-semibold transition disabled:opacity-60"
@@ -507,7 +515,7 @@ export default function Detailed_design() {
           <ChatInput
             onSendMessage={handleSendMessage}
             activeFunction={functionTypeMap[activeFunction] || ''}
-            isReportGeneration={activeFunction === "report-generation"}
+            isReportGeneration={activeFunction === "report_generation"}
             moduleId="detailed"
             isDisabled={isLoading}
             isResponding={isResponding}

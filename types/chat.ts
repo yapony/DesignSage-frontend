@@ -6,6 +6,7 @@ export interface Message {
   role: 'user' | 'assistant'
   timestamp: Date
   functionType?: FunctionType
+  moduleId?: string
 }
 
 export interface ChatHistory {
