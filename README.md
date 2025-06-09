@@ -97,14 +97,13 @@ git commit -m "feat: 添加新功能描述"
 
 ### 3. 上传分支并合并
 
-1. 将代码推送到远程仓库
+将代码推送到远程仓库
 ```bash
 
 # 推送到远程仓库
 git push origin your-feature
 
-## 项目结构
-
+#项目结构
 ```
 DesignSage-frontend/
 ├── app/                # 应用路由和页面
