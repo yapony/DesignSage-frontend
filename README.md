@@ -2,6 +2,18 @@
 
 DesignSage 是一个基于 AI 的智能设计助手平台，提供需求分析、概念设计和详细设计三个核心模块，本项目为其前端部分。
 
+项目结构：
+```bash
+DesignSage-frontend/
+├── app/                # 应用路由和页面
+├── components/         # 可复用组件
+├── lib/               # 工具函数和配置
+├── public/            # 静态资源
+├── types/             # TypeScript 类型定义
+├── hooks/             # 自定义 React Hooks
+└── config/            # 项目配置文件
+```
+
 ## 功能特性
 
 ### 1. 需求分析模块
@@ -102,16 +114,3 @@ git commit -m "feat: 添加新功能描述"
 
 # 推送到远程仓库
 git push origin your-feature
-
-### 4. 项目结构
-
-```bash
-DesignSage-frontend/
-├── app/                # 应用路由和页面
-├── components/         # 可复用组件
-├── lib/               # 工具函数和配置
-├── public/            # 静态资源
-├── types/             # TypeScript 类型定义
-├── hooks/             # 自定义 React Hooks
-└── config/            # 项目配置文件
-```
